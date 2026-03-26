@@ -9,26 +9,23 @@ const sequelize = new Sequelize(
     host: config.db.host,
     port: config.db.port,
     dialect: 'mysql',
-
+    timezone: '+05:30',
+    logging: false, // set to console.log to debug queries
     pool: {
       max: 10,
       min: 0,
       acquire: 30000,
       idle: 10000,
     },
-
-    timezone: '+05:30', // IST
-    logging: false,
   }
 );
 
-// 🔹 Test connection (same like your function)
 export const testConnection = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ Sequelize MySQL connected successfully');
   } catch (err) {
-    console.error('❌ Sequelize connection failed:', err.message);
+    console.error('❌ MySQL connection failed:', err.message);
     process.exit(1);
   }
 };

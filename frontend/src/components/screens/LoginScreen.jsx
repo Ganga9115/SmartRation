@@ -1,6 +1,5 @@
 // src/components/screens/LoginScreen.jsx
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShoppingBag } from 'lucide-react';
 import { Card } from '../shared/Card';
 import { Button } from '../shared/Button';
@@ -12,15 +11,70 @@ export const LoginScreen = ({ onNavigate }) => {
   const [rationCard, setRationCard] = useState('');
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+
+  // Timer countdown effect for resend OTP
+  useEffect(() => {
+    let interval;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
+  const sendOTP = async () => {
+    if (!mobile) return alert('Enter mobile number');
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: mobile, rationCard })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('OTP sent successfully');
+        setStep(2);
+        setResendTimer(30); // 30s cooldown
+      } else {
+        alert(data.message || 'Failed to send OTP');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Server error');
+    }
+  };
+
+  const verifyOTP = async () => {
+    if (!otp) return alert('Enter OTP');
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: mobile, otp })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Login successful');
+        onNavigate('home');
+      } else {
+        alert(data.message || 'Invalid OTP');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Server error');
+    }
+  };
 
   const handleSubmit = () => {
-    console.log('LoginScreen submit clicked', { step, rationCard, mobile, otp });
-    if (step === 1) {
-      setStep(2);
-    } else {
-      console.log('Navigating to home');
-      onNavigate('home');
-    }
+    if (step === 1) sendOTP();
+    else verifyOTP();
+  };
+
+  const handleResend = () => {
+    if (resendTimer > 0) return;
+    sendOTP();
   };
 
   return (
@@ -106,10 +160,12 @@ export const LoginScreen = ({ onNavigate }) => {
                 OTP sent to +91 {mobile.slice(-4).padStart(10, 'X')}
               </p>
               <button
+                onClick={handleResend}
+                disabled={resendTimer > 0}
                 className="w-full text-center mb-4 font-semibold"
-                style={{ color: COLORS.primary }}
+                style={{ color: resendTimer > 0 ? '#999' : COLORS.primary }}
               >
-                Resend OTP
+                {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
               </button>
             </>
           )}

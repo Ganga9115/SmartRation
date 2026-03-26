@@ -1,5 +1,4 @@
 import sequelize from '../config/db.js';
-
 import User from './User.model.js';
 import RationCard from './RationCard.model.js';
 import Shop from './Shop.model.js';
@@ -8,9 +7,8 @@ import Booking from './Booking.model.js';
 import QueueLog from './QueueLog.model.js';
 import WelfareAlert from './WelfareAlert.model.js';
 
-// Relationships
-
-User.hasMany(RationCard, { foreignKey: 'user_id' });
+// ── Relationships ─────────────────────────────────────────
+User.hasOne(RationCard, { foreignKey: 'user_id' });
 RationCard.belongsTo(User, { foreignKey: 'user_id' });
 
 Shop.hasMany(Stock, { foreignKey: 'shop_id' });
@@ -31,7 +29,9 @@ QueueLog.belongsTo(Booking, { foreignKey: 'booking_id' });
 User.hasMany(WelfareAlert, { foreignKey: 'user_id' });
 WelfareAlert.belongsTo(User, { foreignKey: 'user_id' });
 
-// Export
+RationCard.hasMany(WelfareAlert, { foreignKey: 'ration_card_id' });
+WelfareAlert.belongsTo(RationCard, { foreignKey: 'ration_card_id' });
+
 export {
   sequelize,
   User,
@@ -40,5 +40,5 @@ export {
   Stock,
   Booking,
   QueueLog,
-  WelfareAlert
+  WelfareAlert,
 };
