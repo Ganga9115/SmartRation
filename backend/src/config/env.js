@@ -15,11 +15,10 @@ export const config = {
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN,
   },
-  twilio: {
-    accountSid: process.env.TWILIO_ACCOUNT_SID,
-    authToken: process.env.TWILIO_AUTH_TOKEN,
-    phoneNumber: process.env.TWILIO_PHONE_NUMBER,
-  },
+msg91: {
+  authKey:    process.env.MSG91_AUTH_KEY,
+  templateId: process.env.MSG91_OTP_TEMPLATE_ID,
+},
   app: {
     bookingCycleDays: parseInt(process.env.BOOKING_CYCLE_DAYS) || 30,
     maxSlotsPerDay: parseInt(process.env.MAX_SLOTS_PER_DAY) || 50,
