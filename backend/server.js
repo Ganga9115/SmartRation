@@ -4,12 +4,15 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { config } from './src/config/env.js';
 import { testConnection } from './src/config/db.js';
+import { sequelize } from './src/models/index.js';
+import authRoutes    from './src/routes/auth.routes.js';
 import bookingRoutes from './src/routes/booking.routes.js';
-import './src/utils/welfare.cron.js';  
-import authRoutes from './src/routes/auth.routes.js';
-// import stockRoutes   from './src/routes/stock.routes.js';    // Phase 5
-// import queueRoutes   from './src/routes/queue.routes.js';    // Phase 7
-// import welfareRoutes from './src/routes/welfare.routes.js';  // Phase 7
+import stockRoutes   from './src/routes/stock.routes.js';
+import queueRoutes   from './src/routes/queue.routes.js';
+import welfareRoutes from './src/routes/welfare.routes.js';
+
+// Start background welfare monitoring cron jobs
+import './src/utils/welfare.cron.js';
 
 const app = express();
 
@@ -19,19 +22,19 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Routes ──────────────────────────────────────────────
+// ── Routes ───────────────────────────────────────────────
 app.use('/api/auth',    authRoutes);
 app.use('/api/booking', bookingRoutes);
-// app.use('/api/stock',   stockRoutes);
-// app.use('/api/queue',   queueRoutes);
-// app.use('/api/welfare', welfareRoutes);
+app.use('/api/stock',   stockRoutes);
+app.use('/api/queue',   queueRoutes);
+app.use('/api/welfare', welfareRoutes);
 
-// ── Health check ────────────────────────────────────────
+// ── Health check ─────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ── Global error handler ─────────────────────────────────
+// ── Global error handler ──────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
@@ -40,10 +43,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ── Start ────────────────────────────────────────────────
+// ── Start ─────────────────────────────────────────────────
 const startServer = async () => {
   try {
     await testConnection();
+     await sequelize.sync({ force: true });
     app.listen(config.port, () => {
       console.log(`🚀 SmartRation API running on port ${config.port}`);
     });
