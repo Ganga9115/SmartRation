@@ -2,21 +2,23 @@ import express from 'express';
 import {
   getSlots,
   createBooking,
-  getTokenStatus,
-  cancelBooking,
   getMyBookings,
+  getBookingById,
+  cancelBooking,
+  verifyBookingToken,
 } from '../controllers/booking.controller.js';
-import { protect } from '../middleware/auth.js';
+import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Public — anyone with the link can check token status (for the "track live" feature)
-router.get('/status/:token', getTokenStatus);
+// All booking routes require login
+router.use(protect);
 
-// Protected — requires JWT
-router.get('/slots',        protect, getSlots);
-router.post('/create',      protect, createBooking);
-router.delete('/cancel/:id',protect, cancelBooking);
-router.get('/my',           protect, getMyBookings);
+router.get('/slots',              getSlots);
+router.post('/book',              createBooking);
+router.get('/my-bookings',        getMyBookings);
+router.get('/verify/:token_number', verifyBookingToken); // shop owner
+router.get('/:id',                getBookingById);
+router.put('/:id/cancel',         cancelBooking);
 
 export default router;
