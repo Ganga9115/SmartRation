@@ -1,279 +1,208 @@
-// src/components/screens/SlotBookingScreen.jsx
-
-import React, { useState } from 'react';
-import { ArrowLeft, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, Zap } from 'lucide-react';
 import { COLORS } from '../../utils/colors';
-import {Card} from '../shared/Card';
-import {Button} from '../shared/Button';
-import {BottomNav} from '../shared/ButtomNav';
+import { Card } from '../shared/Card';
+import { Button } from '../shared/Button';
+import { BottomNav } from '../shared/ButtomNav';
+import { bookingAPI } from '../../utils/api';
+import { useAuth } from '../../utils/AuthContext';
 
-export const SlotBookingScreen = ({ onNavigate }) => {
+export const SlotBookingScreen = ({ onNavigate, params = {} }) => {
+  const { rationCard } = useAuth();
+  const [slots, setSlots]           = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [booking, setBooking]       = useState(false);
+  const [error, setError]           = useState('');
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedSlot, setSelectedSlot] = useState('');
+  const [selectedSlot, setSelectedSlot] = useState(null);
 
-  // Generate next 7 days
-  const getDates = () => {
-    const dates = [];
-    const today = new Date();
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      dates.push({
-        date: date.toISOString().split('T')[0],
-        day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        dayNum: date.getDate(),
-        month: date.toLocaleDateString('en-US', { month: 'short' })
-      });
+  const shopId   = params.shopId   || rationCard?.shop_id;
+  const shopName = params.shopName || 'Your Ration Shop';
+
+  useEffect(() => {
+    if (!shopId) {
+      setError('No shop assigned. Please register your ration card first.');
+      setLoading(false);
+      return;
     }
-    return dates;
-  };
+    bookingAPI.getSlots(shopId)
+      .then(r => setSlots(r.data.slots || []))
+      .catch(() => setError('Failed to load slots'))
+      .finally(() => setLoading(false));
+  }, [shopId]);
 
-  const timeSlots = [
-    { id: 1, time: '9:00 AM - 10:00 AM', waiting: '5 mins', available: true },
-    { id: 2, time: '10:00 AM - 11:00 AM', waiting: '10 mins', available: true },
-    { id: 3, time: '11:00 AM - 12:00 PM', waiting: '8 mins', available: true },
-    { id: 4, time: '12:00 PM - 1:00 PM', waiting: 'Lunch Break', available: false },
-    { id: 5, time: '2:00 PM - 3:00 PM', waiting: '12 mins', available: true },
-    { id: 6, time: '3:00 PM - 4:00 PM', waiting: '6 mins', available: true },
-    { id: 7, time: '4:00 PM - 5:00 PM', waiting: '15 mins', available: true },
-    { id: 8, time: '5:00 PM - 6:00 PM', waiting: 'Fully Booked', available: false }
-  ];
+  // Group slots by date
+  const slotsByDate = slots.reduce((acc, s) => {
+    if (!acc[s.date]) acc[s.date] = [];
+    acc[s.date].push(s);
+    return acc;
+  }, {});
+  const uniqueDates = Object.keys(slotsByDate).sort();
 
-  const dates = getDates();
-
-  const handleBooking = () => {
-    if (selectedDate && selectedSlot) {
-      const slot = timeSlots.find(s => s.id.toString() === selectedSlot);
-      onNavigate('confirmation', {
-        date: selectedDate,
-        time: slot?.time,
-        tokenNumber: 'TKN' + Math.floor(100000 + Math.random() * 900000),
-        shopName: 'Fair Price Shop - Sector 12'
+  const handleBook = async () => {
+    if (!selectedSlot) return;
+    setError('');
+    setBooking(true);
+    try {
+      const res = await bookingAPI.create({
+        shop_id:      shopId,
+        booking_date: selectedSlot.date,
+        slot_time:    selectedSlot.slot_time,
       });
+      onNavigate('confirmation', { bookingId: res.data.booking.id, booking: res.data.booking });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Booking failed. Please try again.');
+    } finally {
+      setBooking(false);
     }
   };
 
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      backgroundColor: COLORS.background,
-      paddingBottom: '6rem'
-    },
-    header: {
-      backgroundColor: COLORS.primary,
-      padding: '3rem 1.5rem 1.5rem 1.5rem'
-    },
-    headerTop: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.75rem',
-      marginBottom: '1rem'
-    },
-    backButton: {
-      color: COLORS.surface,
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      padding: 0
-    },
-    headerTitle: {
-      color: COLORS.surface,
-      flex: 1,
-      fontSize: '1.25rem',
-      fontWeight: '600',
-      margin: 0
-    },
-    headerSubtitle: {
-      color: 'rgba(255, 255, 255, 0.9)',
-      fontSize: '0.875rem'
-    },
-    content: {
-      padding: '1.5rem'
-    },
-    sectionHeader: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      marginBottom: '1rem'
-    },
-    sectionTitle: {
-      color: COLORS.primary,
-      fontSize: '1.125rem',
-      fontWeight: '600',
-      margin: 0
-    },
-    dateContainer: {
-      display: 'flex',
-      gap: '0.5rem',
-      overflowX: 'auto',
-      paddingBottom: '0.5rem',
-      scrollbarWidth: 'none',
-      msOverflowStyle: 'none'
-    },
-    dateButton: (isSelected) => ({
-      flexShrink: 0,
-      padding: '0.75rem 1rem',
-      borderRadius: '0.75rem',
-      border: `2px solid ${isSelected ? COLORS.primary : COLORS.border}`,
-      backgroundColor: isSelected ? COLORS.primary : COLORS.surface,
-      color: isSelected ? COLORS.surface : COLORS.text,
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      minWidth: '80px'
-    }),
-    dateText: (isSelected) => ({
-      textAlign: 'center',
-      color: isSelected ? 'rgba(255, 255, 255, 0.7)' : COLORS.textLight,
-      fontSize: '0.75rem',
-      margin: 0
-    }),
-    dateNum: {
-      marginTop: '0.25rem',
-      fontSize: '1.125rem',
-      fontWeight: '600',
-      margin: '0.25rem 0'
-    },
-    timeSlotGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '0.75rem'
-    },
-    timeSlotButton: (isSelected, isAvailable) => ({
-      padding: '1rem',
-      borderRadius: '0.75rem',
-      border: `2px solid ${isSelected ? COLORS.primary : COLORS.border}`,
-      backgroundColor: isSelected ? COLORS.primary : isAvailable ? COLORS.surface : COLORS.background,
-      color: isSelected ? COLORS.surface : isAvailable ? COLORS.text : COLORS.textLight,
-      cursor: isAvailable ? 'pointer' : 'not-allowed',
-      transition: 'all 0.2s',
-      textAlign: 'left'
-    }),
-    slotTime: (isSelected) => ({
-      color: isSelected ? COLORS.surface : COLORS.primary,
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      margin: 0
-    }),
-    slotWaiting: (isSelected, isAvailable) => ({
-      marginTop: '0.5rem',
-      color: isSelected ? 'rgba(255, 255, 255, 0.7)' : isAvailable ? COLORS.textLight : COLORS.textLight,
-      fontSize: '0.75rem',
-      margin: '0.5rem 0 0 0'
-    })
-  };
+  const formatDate = (d) => new Date(d).toLocaleDateString('en-IN', {
+    weekday: 'short', day: 'numeric', month: 'short'
+  });
 
   return (
-    <div style={styles.container}>
+    <div style={{ minHeight: '100vh', backgroundColor: COLORS.background, paddingBottom: '6rem' }}>
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerTop}>
-          <button 
-            onClick={() => onNavigate('nearby-shops')} 
-            style={styles.backButton}
-          >
+      <div style={{ backgroundColor: COLORS.primary, padding: '3rem 1.5rem 1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+          <button onClick={() => onNavigate('nearby-shops')}
+            style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer' }}>
             <ArrowLeft size={24} />
           </button>
-          <h2 style={styles.headerTitle}>Book Your Slot</h2>
+          <h2 style={{ color: 'white', fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>Book Slot</h2>
         </div>
-        <p style={styles.headerSubtitle}>Choose date and time</p>
+        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.875rem' }}>{shopName}</p>
       </div>
 
-      <div style={styles.content}>
-        {/* Shop Info */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <Card variant="lilac">
-            <h4 style={{ color: COLORS.primary, marginBottom: '0.25rem', fontSize: '1rem', fontWeight: '600' }}>
-              Fair Price Shop - Sector 12
-            </h4>
-            <p style={{ color: `${COLORS.primary}B3`, fontSize: '0.875rem', margin: 0 }}>
-              Shop No. 45, Sector 12, Near Market
+      <div style={{ padding: '1.5rem' }}>
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-xl mb-4 text-sm">{error}</div>
+        )}
+
+        {!rationCard && (
+          <Card className="mb-4">
+            <p style={{ color: COLORS.primary }} className="text-center font-semibold mb-2">
+              No ration card found
             </p>
+            <Button title="Register Card" onClick={() => onNavigate('ration-card')} fullWidth />
           </Card>
-        </div>
+        )}
 
-        {/* Date Selection */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={styles.sectionHeader}>
-            <CalendarIcon size={20} color={COLORS.primary} />
-            <h3 style={styles.sectionTitle}>Select Date</h3>
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="w-10 h-10 rounded-full border-4 border-purple-200 border-t-purple-600 animate-spin mx-auto mb-3" />
+            <p style={{ color: COLORS.textLight }}>Loading available slots...</p>
           </div>
-          
-          <div style={styles.dateContainer}>
-            {dates.map((date) => (
-              <button
-                key={date.date}
-                onClick={() => setSelectedDate(date.date)}
-                style={styles.dateButton(selectedDate === date.date)}
-              >
-                <div>
-                  <p style={styles.dateText(selectedDate === date.date)}>
-                    {date.day}
-                  </p>
-                  <p style={styles.dateNum}>{date.dayNum}</p>
-                  <p style={styles.dateText(selectedDate === date.date)}>
-                    {date.month}
-                  </p>
+        ) : (
+          <>
+            {/* AI Recommended banner */}
+            {slots.some(s => s.is_recommended) && (
+              <div className="mb-4 p-3 rounded-xl flex items-center gap-2"
+                style={{ backgroundColor: COLORS.secondary }}>
+                <Zap size={16} color={COLORS.primary} />
+                <p style={{ color: COLORS.primary }} className="text-sm font-semibold">
+                  AI has highlighted the best slots for you
+                </p>
+              </div>
+            )}
+
+            {/* Date selector */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                <CalendarIcon size={20} color={COLORS.primary} />
+                <h3 style={{ color: COLORS.primary, fontWeight: '600', margin: 0 }}>Select Date</h3>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                {uniqueDates.map(date => {
+                  const d = new Date(date);
+                  const isSelected = selectedDate === date;
+                  return (
+                    <button key={date}
+                      onClick={() => { setSelectedDate(date); setSelectedSlot(null); }}
+                      style={{
+                        flexShrink: 0, padding: '0.75rem 1rem', borderRadius: '0.75rem',
+                        border: `2px solid ${isSelected ? COLORS.primary : COLORS.border}`,
+                        backgroundColor: isSelected ? COLORS.primary : 'white',
+                        color: isSelected ? 'white' : COLORS.text, cursor: 'pointer',
+                        minWidth: '72px', textAlign: 'center'
+                      }}>
+                      <div style={{ fontSize: '0.7rem', color: isSelected ? 'rgba(255,255,255,0.7)' : COLORS.textLight }}>
+                        {d.toLocaleDateString('en', { weekday: 'short' })}
+                      </div>
+                      <div style={{ fontSize: '1.125rem', fontWeight: '700' }}>{d.getDate()}</div>
+                      <div style={{ fontSize: '0.7rem', color: isSelected ? 'rgba(255,255,255,0.7)' : COLORS.textLight }}>
+                        {d.toLocaleDateString('en', { month: 'short' })}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Time slots */}
+            {selectedDate && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <Clock size={20} color={COLORS.primary} />
+                  <h3 style={{ color: COLORS.primary, fontWeight: '600', margin: 0 }}>Select Time Slot</h3>
                 </div>
-              </button>
-            ))}
-          </div>
-        </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '0.75rem' }}>
+                  {(slotsByDate[selectedDate] || []).map((slot, i) => {
+                    const isSelected = selectedSlot?.slot_time === slot.slot_time;
+                    return (
+                      <button key={i}
+                        onClick={() => setSelectedSlot(slot)}
+                        style={{
+                          padding: '1rem', borderRadius: '0.75rem', textAlign: 'left',
+                          border: `2px solid ${isSelected ? COLORS.primary : slot.is_recommended ? COLORS.primary + '44' : COLORS.border}`,
+                          backgroundColor: isSelected ? COLORS.primary : slot.is_recommended ? COLORS.secondary : 'white',
+                          cursor: 'pointer', position: 'relative'
+                        }}>
+                        {slot.is_recommended && !isSelected && (
+                          <span style={{ position: 'absolute', top: 6, right: 6,
+                            backgroundColor: COLORS.primary, color: 'white',
+                            fontSize: '0.6rem', padding: '1px 5px', borderRadius: '4px' }}>
+                            ⚡ Best
+                          </span>
+                        )}
+                        <p style={{ color: isSelected ? 'white' : COLORS.primary,
+                          fontWeight: '600', margin: '0 0 0.25rem 0', fontSize: '0.875rem' }}>
+                          {slot.slot_time}
+                        </p>
+                        <p style={{ color: isSelected ? 'rgba(255,255,255,0.7)' : COLORS.textLight,
+                          margin: 0, fontSize: '0.75rem' }}>
+                          {slot.available_count} spot{slot.available_count !== 1 ? 's' : ''} left
+                        </p>
+                        <p style={{ color: isSelected ? 'rgba(255,255,255,0.6)' : COLORS.textLight,
+                          margin: '0.25rem 0 0 0', fontSize: '0.7rem' }}>
+                          Score: {slot.score}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-        {/* Time Slot Selection */}
-        {selectedDate && (
-          <div>
-            <div style={styles.sectionHeader}>
-              <Clock size={20} color={COLORS.primary} />
-              <h3 style={styles.sectionTitle}>Select Time Slot</h3>
-            </div>
-
-            <div style={styles.timeSlotGrid}>
-              {timeSlots.map((slot) => (
-                <button
-                  key={slot.id}
-                  onClick={() => slot.available && setSelectedSlot(slot.id.toString())}
-                  disabled={!slot.available}
-                  style={styles.timeSlotButton(
-                    selectedSlot === slot.id.toString(),
-                    slot.available
-                  )}
-                >
-                  <p style={styles.slotTime(selectedSlot === slot.id.toString())}>
-                    {slot.time}
+            {selectedSlot && (
+              <div style={{ marginTop: '1.5rem' }}>
+                <Card variant="lilac" className="mb-4">
+                  <p style={{ color: COLORS.primary, fontWeight: '600', margin: '0 0 0.25rem 0' }}>
+                    Selected: {formatDate(selectedSlot.date)} at {selectedSlot.slot_time}
                   </p>
-                  <p style={styles.slotWaiting(
-                    selectedSlot === slot.id.toString(),
-                    slot.available
-                  )}>
-                    {slot.available ? `⏱️ ${slot.waiting}` : slot.waiting}
+                  <p style={{ color: COLORS.textLight, margin: 0, fontSize: '0.875rem' }}>
+                    {selectedSlot.available_count} spots available
                   </p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Info Card */}
-        {selectedSlot && (
-          <div style={{ marginTop: '1.5rem' }}>
-            <Card variant="lilac">
-              <p style={{ color: COLORS.primary, textAlign: 'center', margin: 0, fontSize: '0.875rem' }}>
-                Your estimated waiting time at the shop will be displayed after booking confirmation.
-              </p>
-            </Card>
-          </div>
-        )}
-
-        {/* Confirm Button */}
-        {selectedDate && selectedSlot && (
-          <div style={{ marginTop: '1.5rem' }}>
-            <Button fullWidth onClick={handleBooking}>
-              Confirm Booking
-            </Button>
-          </div>
+                </Card>
+                <Button
+                  title={booking ? 'Booking...' : 'Confirm Booking'}
+                  onClick={handleBook} fullWidth disabled={booking} />
+              </div>
+            )}
+          </>
         )}
       </div>
-
       <BottomNav active="slot-booking" onNavigate={onNavigate} />
     </div>
   );
