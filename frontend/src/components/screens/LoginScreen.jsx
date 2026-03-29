@@ -1,181 +1,137 @@
-// src/components/screens/LoginScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { ShoppingBag } from 'lucide-react';
 import { Card } from '../shared/Card';
 import { Button } from '../shared/Button';
 import { COLORS } from '../../utils/colors';
+import { authAPI } from '../../utils/api';
+import { useAuth } from '../../utils/AuthContext';
 
 export const LoginScreen = ({ onNavigate }) => {
-  const [isNewUser, setIsNewUser] = useState(false);
-  const [step, setStep] = useState(1);
-  const [rationCard, setRationCard] = useState('');
-  const [mobile, setMobile] = useState('');
-  const [otp, setOtp] = useState('');
+  const { login } = useAuth();
+  const [step, setStep]               = useState(1);
+  const [phone, setPhone]             = useState('');
+  const [otp, setOtp]                 = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState('');
   const [resendTimer, setResendTimer] = useState(0);
 
-  // Timer countdown effect for resend OTP
   useEffect(() => {
     let interval;
-    if (resendTimer > 0) {
-      interval = setInterval(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-    }
+    if (resendTimer > 0) interval = setInterval(() => setResendTimer(p => p - 1), 1000);
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  const sendOTP = async () => {
-    if (!mobile) return alert('Enter mobile number');
+  const handleSendOTP = async () => {
+    setError('');
+    if (!phone || phone.length !== 10) return setError('Enter a valid 10-digit mobile number');
+    setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: mobile, rationCard })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert('OTP sent successfully');
+      const res = await authAPI.sendOTP(phone);
+      if (res.data.success) {
         setStep(2);
-        setResendTimer(30); // 30s cooldown
-      } else {
-        alert(data.message || 'Failed to send OTP');
+        setResendTimer(30);
+        // Show OTP in dev mode
+        if (res.data.otp) setError(`Dev OTP: ${res.data.otp}`);
       }
     } catch (err) {
-      console.error(err);
-      alert('Server error');
+      setError(err.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const verifyOTP = async () => {
-    if (!otp) return alert('Enter OTP');
+  const handleVerifyOTP = async () => {
+    setError('');
+    if (!otp || otp.length !== 6) return setError('Enter the 6-digit OTP');
+    setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: mobile, otp })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert('Login successful');
-        onNavigate('home');
-      } else {
-        alert(data.message || 'Invalid OTP');
+      const res = await authAPI.verifyOTP(phone, otp);
+      if (res.data.success) {
+        login(res.data.user, res.data.token);
+        // New user → register ration card first
+        if (res.data.user.isNewUser) {
+          onNavigate('ration-card');
+        } else {
+          onNavigate('home');
+        }
       }
     } catch (err) {
-      console.error(err);
-      alert('Server error');
+      setError(err.response?.data?.message || 'Invalid OTP');
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleSubmit = () => {
-    if (step === 1) sendOTP();
-    else verifyOTP();
-  };
-
-  const handleResend = () => {
-    if (resendTimer > 0) return;
-    sendOTP();
   };
 
   return (
-    <div
-      className="w-full min-h-screen p-6 flex flex-col items-center justify-center"
-      style={{ backgroundColor: COLORS.primary }}
-    >
+    <div className="w-full min-h-screen p-6 flex flex-col items-center justify-center"
+      style={{ backgroundColor: COLORS.primary }}>
       <div className="w-full max-w-md">
-        {/* Logo Section */}
+        {/* Logo */}
         <div className="text-center mb-8">
           <div className="bg-white rounded-2xl p-6 w-fit mx-auto mb-4">
             <ShoppingBag size={48} color={COLORS.primary} />
           </div>
           <h1 className="text-white text-2xl font-bold mb-2">SmartRation</h1>
-          <p className="text-white/80">Welcome to your smart ration booking system</p>
+          <p className="text-white/80">Smart ration booking system</p>
         </div>
 
-        {/* Card with Form */}
         <Card>
-          {/* Tab Buttons */}
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => {
-                setIsNewUser(false);
-                setStep(1);
-              }}
-              className="flex-1 py-3 rounded-xl font-semibold transition"
-              style={{
-                backgroundColor: !isNewUser ? COLORS.primary : '#F3F4F6',
-                color: !isNewUser ? 'white' : COLORS.text
-              }}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => {
-                setIsNewUser(true);
-                setStep(1);
-              }}
-              className="flex-1 py-3 rounded-xl font-semibold transition"
-              style={{
-                backgroundColor: isNewUser ? COLORS.primary : '#F3F4F6',
-                color: isNewUser ? 'white' : COLORS.text
-              }}
-            >
-              New User
-            </button>
-          </div>
+          <h2 style={{ color: COLORS.primary }} className="text-xl font-bold mb-6 text-center">
+            {step === 1 ? 'Enter your mobile number' : 'Verify OTP'}
+          </h2>
 
-          {/* Step 1: Card and Mobile */}
+          {error && (
+            <div className={`p-3 rounded-xl mb-4 text-sm text-center ${
+              error.startsWith('Dev') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+            }`}>
+              {error}
+            </div>
+          )}
+
           {step === 1 ? (
             <>
-              <input
-                type="text"
-                placeholder="Ration Card Number"
-                value={rationCard}
-                onChange={(e) => setRationCard(e.target.value)}
-                className="w-full p-3 border-2 rounded-xl mb-4"
-                style={{ borderColor: COLORS.border }}
-              />
-              <input
-                type="tel"
-                placeholder="Mobile Number"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                className="w-full p-3 border-2 rounded-xl mb-4"
-                style={{ borderColor: COLORS.border }}
-              />
+              <div className="flex border-2 rounded-xl mb-4 overflow-hidden"
+                style={{ borderColor: COLORS.border }}>
+                <span className="px-3 py-3 bg-gray-50 text-gray-500 border-r"
+                  style={{ borderColor: COLORS.border }}>+91</span>
+                <input
+                  type="tel" maxLength="10"
+                  placeholder="10-digit mobile number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                  className="flex-1 p-3 outline-none"
+                />
+              </div>
+              <Button title={loading ? 'Sending...' : 'Send OTP'}
+                onClick={handleSendOTP} fullWidth disabled={loading} />
             </>
           ) : (
             <>
-              {/* Step 2: OTP */}
+              <p className="text-center text-gray-500 text-sm mb-4">
+                OTP sent to +91 {phone.slice(0,3)}XXXXX{phone.slice(-2)}
+              </p>
               <input
-                type="text"
-                placeholder="Enter OTP"
-                maxLength="6"
+                type="text" maxLength="6"
+                placeholder="Enter 6-digit OTP"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                className="w-full p-3 border-2 rounded-xl mb-4 text-center tracking-widest"
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                className="w-full p-3 border-2 rounded-xl mb-4 text-center tracking-widest text-lg"
                 style={{ borderColor: COLORS.border }}
               />
-              <p className="text-sm text-gray-600 text-center mb-2">
-                OTP sent to +91 {mobile.slice(-4).padStart(10, 'X')}
-              </p>
-              <button
-                onClick={handleResend}
-                disabled={resendTimer > 0}
-                className="w-full text-center mb-4 font-semibold"
-                style={{ color: resendTimer > 0 ? '#999' : COLORS.primary }}
-              >
+              <Button title={loading ? 'Verifying...' : 'Verify & Continue'}
+                onClick={handleVerifyOTP} fullWidth disabled={loading} />
+              <button onClick={resendTimer > 0 ? null : handleSendOTP}
+                className="w-full text-center mt-3 text-sm font-semibold"
+                style={{ color: resendTimer > 0 ? '#999' : COLORS.primary }}>
                 {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+              </button>
+              <button onClick={() => { setStep(1); setOtp(''); setError(''); }}
+                className="w-full text-center mt-2 text-sm"
+                style={{ color: COLORS.textLight }}>
+                ← Change number
               </button>
             </>
           )}
-
-          {/* Submit Button */}
-          <Button
-            title={step === 1 ? (isNewUser ? 'Register' : 'Send OTP') : 'Verify & Continue'}
-            onClick={handleSubmit}
-            fullWidth
-          />
         </Card>
       </div>
     </div>

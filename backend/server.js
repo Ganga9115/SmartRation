@@ -10,7 +10,8 @@ import bookingRoutes from './src/routes/booking.routes.js';
 import stockRoutes   from './src/routes/stock.routes.js';
 import queueRoutes   from './src/routes/queue.routes.js';
 import welfareRoutes from './src/routes/welfare.routes.js';
-
+import rationCardRoutes from './src/routes/rationCard.routes.js';
+import shopRoutes from './src/routes/shop.routes.js';
 // Start background welfare monitoring cron jobs
 import './src/utils/welfare.cron.js';
 
@@ -28,7 +29,8 @@ app.use('/api/booking', bookingRoutes);
 app.use('/api/stock',   stockRoutes);
 app.use('/api/queue',   queueRoutes);
 app.use('/api/welfare', welfareRoutes);
-
+app.use('/api/ration-card', rationCardRoutes);
+app.use('/api/shops', shopRoutes);
 // ── Health check ─────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -47,7 +49,7 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await testConnection();
-     await sequelize.sync({ force: true });
+     await sequelize.sync({ alter: true });
     app.listen(config.port, () => {
       console.log(`🚀 SmartRation API running on port ${config.port}`);
     });

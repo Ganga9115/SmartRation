@@ -1,16 +1,11 @@
-import { Booking, RationCard, WelfareAlert, Stock } from '../models/index.js';
-import { Op } from 'sequelize';
+import { Booking, RationCard, Stock, WelfareAlert } from '../models/index.js';
+import { Op, literal } from 'sequelize';   // ✅ literal imported properly
 
-/**
- * Check for families who haven't collected rations in 2+ months.
- * Creates a 'missed_collection' welfare alert if not already open.
- */
 export const checkMissedCollections = async () => {
   try {
     const twoMonthsAgo = new Date();
     twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
-    // Active ration cards with no recent booking
     const cards = await RationCard.findAll({ where: { is_active: true } });
     let created = 0;
 
@@ -24,7 +19,6 @@ export const checkMissedCollections = async () => {
       });
 
       if (!recentBooking) {
-        // Avoid duplicate open alerts
         const existing = await WelfareAlert.findOne({
           where: {
             ration_card_id: card.id,
@@ -38,7 +32,7 @@ export const checkMissedCollections = async () => {
             user_id:        card.user_id,
             ration_card_id: card.id,
             alert_type:     'missed_collection',
-            message:        `Ration card ${card.card_number} has not collected rations in over 2 months. Please check on this family.`,
+            message:        `Ration card ${card.card_number} has not collected rations in over 2 months.`,
           });
           created++;
         }
@@ -53,10 +47,6 @@ export const checkMissedCollections = async () => {
   }
 };
 
-/**
- * Flag users who had a confirmed booking but status never moved to 'completed'
- * (i.e., they booked but didn't show up — potential token abuse).
- */
 export const checkInactiveBookings = async () => {
   try {
     const sevenDaysAgo = new Date();
@@ -95,7 +85,7 @@ export const checkInactiveBookings = async () => {
       }
     }
 
-    console.log(`⏰ Inactivity check | Stale bookings: ${staleBookings.length} | Alerts: ${created}`);
+    console.log(`⏰ Inactivity check | Stale: ${staleBookings.length} | Alerts: ${created}`);
     return { stale: staleBookings.length, alertsCreated: created };
   } catch (err) {
     console.error('checkInactiveBookings error:', err.message);
@@ -103,20 +93,17 @@ export const checkInactiveBookings = async () => {
   }
 };
 
-/**
- * Check all shops for critically low stock and raise 'stock_low' alerts.
- * Threshold: available_qty < 20% of total_qty
- */
 export const checkLowStock = async () => {
   try {
-    const lowItems = await Stock.findAll({
-      where: {
-        available_qty: { [Op.lt]: require('sequelize').literal('total_qty * 0.20') },
-        total_qty:     { [Op.gt]: 0 },
-      },
+    // ✅ Use literal() from sequelize import — no require()
+    const allStock = await Stock.findAll({
+      where: { total_qty: { [Op.gt]: 0 } },
     });
 
-    // Group by shop
+    const lowItems = allStock.filter(
+      (i) => parseFloat(i.available_qty) < parseFloat(i.total_qty) * 0.2
+    );
+
     const byShop = {};
     for (const item of lowItems) {
       if (!byShop[item.shop_id]) byShop[item.shop_id] = [];
@@ -125,9 +112,6 @@ export const checkLowStock = async () => {
 
     let created = 0;
     for (const [shopId, items] of Object.entries(byShop)) {
-      // We create one alert per shop per item per day (no ration_card context needed,
-      // so we use a sentinel user_id = 0 / admin placeholder)
-      // In practice tie this to the shop_owner user_id if available.
       const existing = await WelfareAlert.findOne({
         where: {
           alert_type:  'stock_low',
@@ -138,8 +122,8 @@ export const checkLowStock = async () => {
 
       if (!existing) {
         await WelfareAlert.create({
-          user_id:        1, // admin user — adjust to your admin ID
-          ration_card_id: 1, // sentinel
+          user_id:        1,
+          ration_card_id: 1,
           alert_type:     'stock_low',
           message:        `Shop #${shopId} is critically low on: ${items.join(', ')}. Restock needed immediately.`,
         });
@@ -147,7 +131,7 @@ export const checkLowStock = async () => {
       }
     }
 
-    console.log(`📦 Stock check | Low-stock shops: ${Object.keys(byShop).length} | Alerts: ${created}`);
+    console.log(`📦 Stock check | Low shops: ${Object.keys(byShop).length} | Alerts: ${created}`);
     return { lowShops: Object.keys(byShop).length, alertsCreated: created };
   } catch (err) {
     console.error('checkLowStock error:', err.message);
@@ -155,12 +139,6 @@ export const checkLowStock = async () => {
   }
 };
 
-/**
- * Flag fraud-scan results as welfare alerts.
- * Called from welfare.cron after runBatchFraudScan().
- *
- * @param {Array} flaggedUsers – output of fraudDetector.runBatchFraudScan()
- */
 export const raiseFraudAlerts = async (flaggedUsers = []) => {
   let created = 0;
 

@@ -1,420 +1,168 @@
-// src/components/screens/ProfileScreen.jsx
-
-import React from 'react';
-import { ArrowLeft, User, CreditCard, Users, MapPin, Globe, HelpCircle, MessageSquare, LogOut, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, User, CreditCard, Users, MapPin, LogOut, ChevronRight, Edit2 } from 'lucide-react';
 import { COLORS } from '../../utils/colors';
 import { Card } from '../shared/Card';
 import { BottomNav } from '../shared/ButtomNav';
+import { useAuth } from '../../utils/AuthContext';
+import { authAPI } from '../../utils/api';
 
 export const ProfileScreen = ({ onNavigate }) => {
-  const menuItems = [
-    {
-      id: 1,
-      icon: Globe,
-      title: 'Language / भाषा',
-      subtitle: 'English',
-      action: 'language'
-    },
-    {
-      id: 2,
-      icon: HelpCircle,
-      title: 'Help & Support',
-      subtitle: 'FAQs, Contact us',
-      action: 'help'
-    },
-    {
-      id: 3,
-      icon: MessageSquare,
-      title: 'Feedback & Complaints',
-      subtitle: 'Share your experience',
-      action: 'feedback'
-    }
-  ];
+  const { user, rationCard, logout, setUser } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [name, setName]       = useState(user?.name || '');
+  const [email, setEmail]     = useState(user?.email || '');
+  const [saving, setSaving]   = useState(false);
 
-  const familyMembers = [
-    { name: 'Rajesh Kumar', relation: 'Head of Family' },
-    { name: 'Sunita Kumar', relation: 'Spouse' },
-    { name: 'Amit Kumar', relation: 'Son' },
-    { name: 'Priya Kumar', relation: 'Daughter' }
-  ];
-
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      backgroundColor: COLORS.background,
-      paddingBottom: '6rem'
-    },
-    header: {
-      backgroundColor: COLORS.primary,
-      padding: '3rem 1.5rem 2rem 1.5rem'
-    },
-    headerTop: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.75rem',
-      marginBottom: '1.5rem'
-    },
-    backButton: {
-      color: COLORS.surface,
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      padding: 0
-    },
-    headerTitle: {
-      color: COLORS.surface,
-      flex: 1,
-      fontSize: '1.25rem',
-      fontWeight: '600',
-      margin: 0
-    },
-    profileCardWrapper: {
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      backdropFilter: 'blur(8px)',
-      border: '1px solid rgba(255, 255, 255, 0.2)',
-      borderRadius: '1rem',
-      padding: '1rem'
-    },
-    profileContent: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '1rem'
-    },
-    profileIcon: {
-      backgroundColor: COLORS.surface,
-      padding: '1rem',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    profileInfo: {
-      flex: 1
-    },
-    profileName: {
-      color: COLORS.surface,
-      marginBottom: '0.25rem',
-      fontSize: '1.125rem',
-      fontWeight: '600',
-      margin: '0 0 0.25rem 0'
-    },
-    profilePhone: {
-      color: 'rgba(255, 255, 255, 0.8)',
-      fontSize: '0.875rem',
-      margin: 0
-    },
-    content: {
-      padding: '0 1.5rem',
-      marginTop: '-1rem'
-    },
-    sectionHeader: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.75rem',
-      marginBottom: '1rem'
-    },
-    sectionTitle: {
-      color: COLORS.primary,
-      fontSize: '1rem',
-      fontWeight: '600',
-      margin: 0
-    },
-    detailsBox: {
-      backgroundColor: COLORS.secondary,
-      padding: '1rem',
-      borderRadius: '0.75rem',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.75rem'
-    },
-    detailRow: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    detailLabel: {
-      color: `${COLORS.primary}B3`,
-      fontSize: '0.875rem'
-    },
-    detailValue: {
-      color: COLORS.primary,
-      fontSize: '0.875rem',
-      fontWeight: '500'
-    },
-    statusActive: {
-      color: COLORS.success,
-      fontSize: '0.875rem',
-      fontWeight: '500'
-    },
-    familyMembersList: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.75rem'
-    },
-    familyMember: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.75rem',
-      padding: '0.75rem',
-      backgroundColor: COLORS.background,
-      borderRadius: '0.75rem'
-    },
-    memberIcon: {
-      backgroundColor: COLORS.secondary,
-      padding: '0.5rem',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    memberInfo: {
-      flex: 1
-    },
-    memberName: {
-      color: COLORS.primary,
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      margin: 0
-    },
-    memberRelation: {
-      color: COLORS.textLight,
-      fontSize: '0.875rem',
-      margin: 0
-    },
-    shopBox: {
-      backgroundColor: COLORS.secondary,
-      padding: '1rem',
-      borderRadius: '0.75rem'
-    },
-    shopName: {
-      color: COLORS.primary,
-      marginBottom: '0.25rem',
-      fontSize: '0.875rem',
-      fontWeight: '600',
-      margin: '0 0 0.25rem 0'
-    },
-    shopAddress: {
-      color: `${COLORS.primary}B3`,
-      fontSize: '0.875rem',
-      margin: 0
-    },
-    shopDistance: {
-      color: `${COLORS.primary}B3`,
-      fontSize: '0.875rem',
-      marginTop: '0.5rem',
-      margin: '0.5rem 0 0 0'
-    },
-    menuList: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.75rem',
-      marginBottom: '1.5rem'
-    },
-    menuItem: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '1rem',
-      border: '2px solid transparent',
-      transition: 'border-color 0.2s',
-      cursor: 'pointer'
-    },
-    menuIconContainer: {
-      backgroundColor: COLORS.secondary,
-      padding: '0.75rem',
-      borderRadius: '0.75rem'
-    },
-    menuContent: {
-      flex: 1
-    },
-    menuTitle: {
-      color: COLORS.primary,
-      marginBottom: '0.25rem',
-      fontSize: '1rem',
-      fontWeight: '600',
-      margin: '0 0 0.25rem 0'
-    },
-    menuSubtitle: {
-      color: COLORS.textLight,
-      fontSize: '0.875rem',
-      margin: 0
-    },
-    appInfo: {
-      textAlign: 'center'
-    },
-    appInfoText: {
-      color: `${COLORS.primary}B3`,
-      marginBottom: '0.25rem',
-      fontSize: '0.875rem',
-      margin: '0 0 0.25rem 0'
-    },
-    appInfoTitle: {
-      color: COLORS.primary,
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      margin: 0
-    },
-    appInfoCopyright: {
-      color: `${COLORS.primary}B3`,
-      marginTop: '0.5rem',
-      fontSize: '0.875rem',
-      margin: '0.5rem 0 0 0'
-    },
-    logoutButton: {
-      width: '100%',
-      backgroundColor: COLORS.surface,
-      border: '2px solid #FECACA',
-      color: '#DC2626',
-      padding: '1rem',
-      borderRadius: '0.75rem',
-      cursor: 'pointer',
-      fontSize: '1rem',
-      fontWeight: '600',
-      transition: 'transform 0.2s',
-      marginBottom: '1.5rem',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '0.5rem'
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await authAPI.updateProfile({ name, email });
+      setUser(res.data.user);
+      setEditing(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setSaving(false);
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    onNavigate('login');
+  };
+
   return (
-    <div style={styles.container}>
+    <div style={{ minHeight: '100vh', backgroundColor: COLORS.background, paddingBottom: '6rem' }}>
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerTop}>
-          <button onClick={() => onNavigate('home')} style={styles.backButton}>
+      <div style={{ backgroundColor: COLORS.primary, padding: '3rem 1.5rem 2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <button onClick={() => onNavigate('home')}
+            style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer' }}>
             <ArrowLeft size={24} />
           </button>
-          <h2 style={styles.headerTitle}>Profile & Settings</h2>
+          <h2 style={{ color: 'white', fontSize: '1.25rem', fontWeight: '600', margin: 0, flex: 1 }}>
+            Profile
+          </h2>
+          <button onClick={() => setEditing(!editing)}
+            style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <Edit2 size={20} />
+          </button>
         </div>
 
-        {/* Profile Card */}
-        <div style={styles.profileCardWrapper}>
-          <div style={styles.profileContent}>
-            <div style={styles.profileIcon}>
+        <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '1rem', padding: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '50%' }}>
               <User size={32} color={COLORS.primary} />
             </div>
-            <div style={styles.profileInfo}>
-              <h3 style={styles.profileName}>Rajesh Kumar</h3>
-              <p style={styles.profilePhone}>+91 98765 43210</p>
+            <div>
+              {editing ? (
+                <input value={name} onChange={e => setName(e.target.value)}
+                  className="bg-white/20 text-white rounded-lg px-2 py-1 text-lg font-bold outline-none"
+                  placeholder="Your name" />
+              ) : (
+                <h3 style={{ color: 'white', margin: '0 0 0.25rem 0', fontSize: '1.125rem', fontWeight: '600' }}>
+                  {user?.name || 'User'}
+                </h3>
+              )}
+              <p style={{ color: 'rgba(255,255,255,0.8)', margin: 0, fontSize: '0.875rem' }}>
+                +91 {user?.phone}
+              </p>
             </div>
           </div>
+          {editing && (
+            <div className="mt-3">
+              <input value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="Email (optional)"
+                className="w-full bg-white/20 text-white placeholder-white/60 rounded-lg px-3 py-2 outline-none text-sm mb-2" />
+              <div className="flex gap-2">
+                <button onClick={handleSave} disabled={saving}
+                  className="flex-1 py-2 rounded-lg font-semibold text-sm"
+                  style={{ backgroundColor: 'white', color: COLORS.primary }}>
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+                <button onClick={() => setEditing(false)}
+                  className="flex-1 py-2 rounded-lg font-semibold text-sm"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      <div style={styles.content}>
-        {/* Ration Card Details */}
-        <div style={{ marginBottom: '1.5rem' }}>
+      <div style={{ padding: '1rem 1.5rem' }}>
+        {/* Ration Card */}
+        <div style={{ marginBottom: '1rem' }}>
           <Card>
-            <div style={styles.sectionHeader}>
-              <CreditCard color={COLORS.primary} size={20} />
-              <h4 style={styles.sectionTitle}>Ration Card Details</h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <CreditCard size={20} color={COLORS.primary} />
+              <h4 style={{ color: COLORS.primary, fontWeight: '600', margin: 0 }}>Ration Card</h4>
             </div>
-            
-            <div style={styles.detailsBox}>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Card Number</span>
-                <span style={styles.detailValue}>XXXX XXXX 1234</span>
+            {rationCard ? (
+              <div style={{ backgroundColor: COLORS.secondary, padding: '1rem', borderRadius: '0.75rem' }}>
+                {[
+                  ['Card Number', rationCard.card_number],
+                  ['Card Type',   rationCard.card_type],
+                  ['Status',      rationCard.is_active ? 'Active' : 'Inactive'],
+                ].map(([label, value]) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ color: `${COLORS.primary}99`, fontSize: '0.875rem' }}>{label}</span>
+                    <span style={{ color: label === 'Status' && rationCard.is_active ? COLORS.success : COLORS.primary,
+                      fontWeight: '500', fontSize: '0.875rem' }}>{value}</span>
+                  </div>
+                ))}
               </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Card Type</span>
-                <span style={styles.detailValue}>APL (Above Poverty Line)</span>
-              </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Status</span>
-                <span style={styles.statusActive}>Active</span>
-              </div>
-            </div>
+            ) : (
+              <button onClick={() => onNavigate('ration-card')}
+                style={{ width: '100%', backgroundColor: COLORS.primary, color: 'white',
+                  padding: '0.75rem', borderRadius: '0.75rem', border: 'none', cursor: 'pointer', fontWeight: '600' }}>
+                Register Ration Card
+              </button>
+            )}
           </Card>
         </div>
 
         {/* Family Members */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <Card>
-            <div style={styles.sectionHeader}>
-              <Users color={COLORS.primary} size={20} />
-              <h4 style={styles.sectionTitle}>Family Members</h4>
-            </div>
-            
-            <div style={styles.familyMembersList}>
-              {familyMembers.map((member, index) => (
-                <div key={index} style={styles.familyMember}>
-                  <div style={styles.memberIcon}>
-                    <User size={16} color={COLORS.primary} />
-                  </div>
-                  <div style={styles.memberInfo}>
-                    <p style={styles.memberName}>{member.name}</p>
-                    <p style={styles.memberRelation}>{member.relation}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        {/* Registered Shop */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <Card>
-            <div style={styles.sectionHeader}>
-              <MapPin color={COLORS.primary} size={20} />
-              <h4 style={styles.sectionTitle}>Registered Shop</h4>
-            </div>
-            
-            <div style={styles.shopBox}>
-              <p style={styles.shopName}>Fair Price Shop - Sector 12</p>
-              <p style={styles.shopAddress}>Shop No. 45, Sector 12, Near Market</p>
-              <p style={styles.shopDistance}>Distance: 0.8 km</p>
-            </div>
-          </Card>
-        </div>
-
-        {/* Settings Menu */}
-        <div style={styles.menuList}>
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div 
-                key={item.id}
-                onMouseEnter={(e) => e.currentTarget.style.borderColor = COLORS.primary}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
-              >
-                <Card>
-                  <div style={styles.menuItem}>
-                    <div style={styles.menuIconContainer}>
-                      <Icon color={COLORS.primary} size={20} />
-                    </div>
-                    <div style={styles.menuContent}>
-                      <h4 style={styles.menuTitle}>{item.title}</h4>
-                      <p style={styles.menuSubtitle}>{item.subtitle}</p>
-                    </div>
-                    <ChevronRight color={COLORS.textLight} size={20} />
-                  </div>
-                </Card>
+        {rationCard && (
+          <div style={{ marginBottom: '1rem' }}>
+            <Card>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <Users size={20} color={COLORS.primary} />
+                <h4 style={{ color: COLORS.primary, fontWeight: '600', margin: 0 }}>Family Members</h4>
               </div>
-            );
-          })}
-        </div>
+              <div style={{ backgroundColor: COLORS.secondary, padding: '1rem', borderRadius: '0.75rem',
+                textAlign: 'center' }}>
+                <span style={{ color: COLORS.primary, fontSize: '2rem', fontWeight: '700' }}>
+                  {rationCard.family_members}
+                </span>
+                <p style={{ color: `${COLORS.primary}99`, margin: '0.25rem 0 0 0', fontSize: '0.875rem' }}>
+                  members registered
+                </p>
+              </div>
+            </Card>
+          </div>
+        )}
 
-        {/* App Info */}
-        <div style={{ marginBottom: '1.5rem' }}>
+        {/* App info */}
+        <div style={{ marginBottom: '1rem' }}>
           <Card variant="lilac">
-            <div style={styles.appInfo}>
-              <p style={styles.appInfoText}>SmartRation v1.0.0</p>
-              <p style={styles.appInfoTitle}>Public Distribution System App</p>
-              <p style={styles.appInfoCopyright}>© 2024 Government of India</p>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ color: COLORS.primary, fontWeight: '600', margin: '0 0 0.25rem 0' }}>
+                SmartRation v1.0.0
+              </p>
+              <p style={{ color: `${COLORS.primary}99`, margin: 0, fontSize: '0.875rem' }}>
+                AI-powered ration distribution system
+              </p>
             </div>
           </Card>
         </div>
 
-        {/* Logout Button */}
-        <button 
-          onClick={() => onNavigate('login')}
-          style={styles.logoutButton}
-          onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-          onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
+        {/* Logout */}
+        <button onClick={handleLogout}
+          style={{ width: '100%', backgroundColor: 'white', border: '2px solid #FECACA',
+            color: '#DC2626', padding: '1rem', borderRadius: '0.75rem', cursor: 'pointer',
+            fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
           <LogOut size={20} />
           <span>Logout</span>
         </button>

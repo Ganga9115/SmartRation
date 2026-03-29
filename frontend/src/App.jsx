@@ -1,57 +1,57 @@
-// src/App.jsx
-
 import React, { useState } from 'react';
-import { SplashScreen } from './components/screens/SplashScreen';
-import { LoginScreen } from './components/screens/LoginScreen';
-import { HomeScreen } from './components/screens/HomeScreen';
-import { StockScreen } from './components/screens/StockScreen';
-import { NearbyShopsScreen } from './components/screens/NearbyShopsScreen';
-import {SlotBookingScreen} from './components/screens/SlotBookingScreen';  // ← ADD THIS IMPORT
-import { BookingConfirmationScreen } from './components/screens/BookingConfirmationScreen';
-import { NotificationsScreen } from './components/screens/NotificationsScreen';
-import { ProfileScreen } from './components/screens/ProfileScreen';
-import { BottomNav } from './components/shared/ButtomNav';
+import { useAuth } from './utils/AuthContext';
+import { SplashScreen }             from './components/screens/SplashScreen';
+import { LoginScreen }              from './components/screens/LoginScreen';
+import { HomeScreen }               from './components/screens/HomeScreen';
+import { StockScreen }              from './components/screens/StockScreen';
+import { NearbyShopsScreen }        from './components/screens/NearbyShopsScreen';
+import { SlotBookingScreen }        from './components/screens/SlotBookingScreen';
+import { BookingConfirmationScreen }from './components/screens/BookingConfirmationScreen';
+import { NotificationsScreen }      from './components/screens/NotificationsScreen';
+import { ProfileScreen }            from './components/screens/ProfileScreen';
+import { RationCardScreen }         from './components/screens/RationCardScreen';
+import { BottomNav }                from './components/shared/ButtomNav';
+import { MyBookingsScreen } from './components/screens/MyBookingsScreen';
 
 export default function App() {
+  const { token, loading } = useAuth();
   const [currentScreen, setCurrentScreen] = useState('login');
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash]       = useState(true);
+  const [screenParams, setScreenParams]   = useState({});
 
-  console.log('App rendering - currentScreen:', currentScreen, 'showSplash:', showSplash);
-
-  const handleNavigate = (screen) => {
-    console.log('Navigation requested to:', screen);
+  const handleNavigate = (screen, params = {}) => {
     setCurrentScreen(screen);
+    setScreenParams(params);
   };
 
-  const showBottomNav = !['splash', 'login'].includes(currentScreen);
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F8F4FB' }}>
+      <div className="text-center">
+        <div className="w-12 h-12 rounded-full border-4 border-purple-200 border-t-purple-600 animate-spin mx-auto mb-4" />
+        <p style={{ color: '#5E4075' }}>Loading...</p>
+      </div>
+    </div>
+  );
 
-  // Show splash first
-  if (showSplash) {
-    return (
-      <SplashScreen 
-        onComplete={() => {
-          console.log('Splash complete - hiding splash screen');
-          setShowSplash(false);
-        }} 
-      />
-    );
-  }
+  if (showSplash) return <SplashScreen onComplete={() => setShowSplash(false)} />;
 
-  // After splash, show the appropriate screen based on currentScreen state
-  
+  // If no token, always show login
+  if (!token && currentScreen !== 'login') handleNavigate('login');
+
+  const showBottomNav = !['login', 'splash'].includes(currentScreen);
+
   return (
     <div className="relative">
-      {/* Render appropriate screen */}
-      {currentScreen === 'login' && <LoginScreen onNavigate={handleNavigate} />}
-      {currentScreen === 'home' && <HomeScreen onNavigate={handleNavigate} />}
-      {currentScreen === 'stock' && <StockScreen onNavigate={handleNavigate} />}
-      {currentScreen === 'nearby-shops' && <NearbyShopsScreen onNavigate={handleNavigate} />}
-      {currentScreen === 'slot-booking' && <SlotBookingScreen onNavigate={handleNavigate} />}  {/* ← ADD THIS LINE */}
-      {currentScreen === 'confirmation' && <BookingConfirmationScreen onNavigate={handleNavigate} />}
-      {currentScreen === 'notifications' && <NotificationsScreen onNavigate={handleNavigate} />}
-      {currentScreen === 'profile' && <ProfileScreen onNavigate={handleNavigate} />}
-
-      {/* Show bottom nav only on main screens */}
+      {currentScreen === 'login'        && <LoginScreen              onNavigate={handleNavigate} />}
+      {currentScreen === 'home'         && <HomeScreen               onNavigate={handleNavigate} />}
+      {currentScreen === 'stock'        && <StockScreen              onNavigate={handleNavigate} params={screenParams} />}
+      {currentScreen === 'nearby-shops' && <NearbyShopsScreen        onNavigate={handleNavigate} />}
+      {currentScreen === 'slot-booking' && <SlotBookingScreen        onNavigate={handleNavigate} params={screenParams} />}
+      {currentScreen === 'confirmation' && <BookingConfirmationScreen onNavigate={handleNavigate} params={screenParams} />}
+      {currentScreen === 'notifications'&& <NotificationsScreen      onNavigate={handleNavigate} />}
+      {currentScreen === 'profile'      && <ProfileScreen            onNavigate={handleNavigate} />}
+      {currentScreen === 'ration-card'  && <RationCardScreen         onNavigate={handleNavigate} />}
+      {currentScreen === 'my-bookings' && <MyBookingsScreen onNavigate={handleNavigate} />}
       {showBottomNav && <BottomNav active={currentScreen} onNavigate={handleNavigate} />}
     </div>
   );
