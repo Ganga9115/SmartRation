@@ -14,6 +14,10 @@ RationCard.belongsTo(User, { foreignKey: 'user_id' });
 Shop.hasMany(Stock, { foreignKey: 'shop_id' });
 Stock.belongsTo(Shop, { foreignKey: 'shop_id' });
 
+// ── Shop ↔ RationCard  ✅ THIS WAS MISSING ────
+Shop.hasMany(RationCard, { foreignKey: 'shop_id' });
+RationCard.belongsTo(Shop, { foreignKey: 'shop_id' });
+
 User.hasMany(Booking, { foreignKey: 'user_id' });
 Booking.belongsTo(User, { foreignKey: 'user_id' });
 
