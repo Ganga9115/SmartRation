@@ -12,6 +12,8 @@ import { ProfileScreen }            from './components/screens/ProfileScreen';
 import { RationCardScreen }         from './components/screens/RationCardScreen';
 import { BottomNav }                from './components/shared/ButtomNav';
 import { MyBookingsScreen } from './components/screens/MyBookingsScreen';
+import LiveQueueScreen from './components/screens/LivequeueScreen';
+
 
 export default function App() {
   const { token, loading } = useAuth();
@@ -52,6 +54,7 @@ export default function App() {
       {currentScreen === 'profile'      && <ProfileScreen            onNavigate={handleNavigate} />}
       {currentScreen === 'ration-card'  && <RationCardScreen         onNavigate={handleNavigate} />}
       {currentScreen === 'my-bookings' && <MyBookingsScreen onNavigate={handleNavigate} />}
+         {currentScreen === 'live-queue'   && <LiveQueueScreen         onNavigate={handleNavigate} params={screenParams} />}
       {showBottomNav && <BottomNav active={currentScreen} onNavigate={handleNavigate} />}
     </div>
   );

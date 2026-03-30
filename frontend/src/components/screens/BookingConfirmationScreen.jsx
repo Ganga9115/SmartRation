@@ -6,9 +6,9 @@ import { COLORS } from '../../utils/colors';
 import { bookingAPI, queueAPI } from '../../utils/api';
 
 export const BookingConfirmationScreen = ({ onNavigate, params = {} }) => {
-  const [booking, setBooking]     = useState(params.booking || null);
-  const [waitInfo, setWaitInfo]   = useState(null);
-  const [loading, setLoading]     = useState(!params.booking);
+  const [booking, setBooking]   = useState(params.booking || null);
+  const [waitInfo, setWaitInfo] = useState(null);
+  const [loading, setLoading]   = useState(!params.booking);
 
   useEffect(() => {
     if (params.bookingId && !params.booking) {
@@ -21,7 +21,8 @@ export const BookingConfirmationScreen = ({ onNavigate, params = {} }) => {
 
   useEffect(() => {
     if (booking) {
-      queueAPI.getWaitTime(booking.shop_id, booking.booking_date, booking.token_number)
+      const sid = booking.shop_id || booking.shop?.id;
+      queueAPI.getWaitTime(sid, booking.booking_date, booking.token_number)
         .then(r => setWaitInfo(r.data))
         .catch(() => {});
     }
@@ -44,13 +45,15 @@ export const BookingConfirmationScreen = ({ onNavigate, params = {} }) => {
     </div>
   );
 
+  // ✅ shopId defined AFTER early returns, so booking is guaranteed to exist
+  const shopId     = booking.shop_id || booking.shop?.id;
   const formatDate = (d) => new Date(d).toLocaleDateString('en-IN', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
 
   return (
     <div className="min-h-screen pb-24" style={{ backgroundColor: COLORS.background }}>
-      {/* Success header */}
+
       <div className="px-6 pt-12 pb-8 text-center"
         style={{ background: `linear-gradient(135deg, ${COLORS.primary}, #7B5EA7)` }}>
         <div className="bg-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
@@ -61,14 +64,13 @@ export const BookingConfirmationScreen = ({ onNavigate, params = {} }) => {
       </div>
 
       <div className="px-6 -mt-4">
-        {/* Token card */}
+
         <Card variant="lilac" className="mb-4" style={{ border: `3px solid ${COLORS.primary}` }}>
           <div className="text-center py-2">
             <p style={{ color: `${COLORS.primary}99` }} className="text-sm mb-1">Token Number</p>
             <h1 style={{ color: COLORS.primary }} className="text-5xl font-bold tracking-widest mb-4">
               #{booking.token_number}
             </h1>
-            {/* Real QR code from backend */}
             {booking.qr_code && (
               <div className="bg-white p-4 rounded-xl inline-block mb-3">
                 <img src={booking.qr_code} alt="QR Code" className="w-40 h-40" />
@@ -80,7 +82,6 @@ export const BookingConfirmationScreen = ({ onNavigate, params = {} }) => {
           </div>
         </Card>
 
-        {/* Wait time */}
         {waitInfo && (
           <Card className="mb-4">
             <div className="flex items-center justify-between">
@@ -100,15 +101,14 @@ export const BookingConfirmationScreen = ({ onNavigate, params = {} }) => {
           </Card>
         )}
 
-        {/* Booking details */}
         <Card className="mb-4">
           <h3 style={{ color: COLORS.primary }} className="font-semibold mb-4">Booking Details</h3>
           <div className="space-y-4">
             {[
-              { icon: MapPin,   label: 'Shop',  value: booking.Shop?.name || booking.shop?.name },
-              { icon: Calendar, label: 'Date',  value: formatDate(booking.booking_date) },
-              { icon: Clock,    label: 'Slot',  value: booking.slot_time },
-              { icon: Hash,     label: 'Card',  value: booking.RationCard?.card_number || booking.ration_card?.card_number },
+              { icon: MapPin,   label: 'Shop', value: booking.Shop?.name || booking.shop?.name },
+              { icon: Calendar, label: 'Date', value: formatDate(booking.booking_date) },
+              { icon: Clock,    label: 'Slot', value: booking.slot_time },
+              { icon: Hash,     label: 'Card', value: booking.RationCard?.card_number || booking.ration_card?.card_number },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-start gap-3 pt-3 border-t first:pt-0 first:border-0"
                 style={{ borderColor: COLORS.border }}>
@@ -122,7 +122,6 @@ export const BookingConfirmationScreen = ({ onNavigate, params = {} }) => {
           </div>
         </Card>
 
-        {/* Instructions */}
         <Card variant="lilac" className="mb-6">
           <h4 style={{ color: COLORS.primary }} className="font-semibold mb-3">Instructions</h4>
           {[
@@ -139,9 +138,19 @@ export const BookingConfirmationScreen = ({ onNavigate, params = {} }) => {
         </Card>
 
         <div className="space-y-3">
-          <Button title="Track Live Queue" onClick={() => onNavigate('home')} fullWidth />
-          <Button title="Back to Home" onClick={() => onNavigate('home')} variant="outline" fullWidth />
+          <Button
+            title="Track Live Queue"
+            onClick={() => onNavigate('live-queue', { booking, shopId })}
+            fullWidth
+          />
+          <Button
+            title="Back to Home"
+            onClick={() => onNavigate('home')}
+            variant="outline"
+            fullWidth
+          />
         </div>
+
       </div>
     </div>
   );

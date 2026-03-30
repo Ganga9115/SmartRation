@@ -6,7 +6,7 @@ import Stock from './Stock.model.js';
 import Booking from './Booking.model.js';
 import QueueLog from './QueueLog.model.js';
 import WelfareAlert from './WelfareAlert.model.js';
-
+import BookingItem from './BookingItem.model.js';
 // ── Relationships ─────────────────────────────────────────
 User.hasOne(RationCard, { foreignKey: 'user_id' });
 RationCard.belongsTo(User, { foreignKey: 'user_id' });
@@ -17,6 +17,9 @@ Stock.belongsTo(Shop, { foreignKey: 'shop_id' });
 // ── Shop ↔ RationCard  ✅ THIS WAS MISSING ────
 Shop.hasMany(RationCard, { foreignKey: 'shop_id' });
 RationCard.belongsTo(Shop, { foreignKey: 'shop_id' });
+
+Booking.hasMany(BookingItem, { foreignKey: 'booking_id' });
+BookingItem.belongsTo(Booking, { foreignKey: 'booking_id' });
 
 User.hasMany(Booking, { foreignKey: 'user_id' });
 Booking.belongsTo(User, { foreignKey: 'user_id' });
@@ -43,6 +46,7 @@ export {
   Shop,
   Stock,
   Booking,
+  BookingItem,
   QueueLog,
   WelfareAlert,
 };

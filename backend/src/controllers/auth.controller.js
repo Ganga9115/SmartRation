@@ -109,12 +109,28 @@ export const getMe = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const { name, email } = req.body;
-    await User.update({ name, email }, { where: { id: req.user.id } });
+
+    // Convert empty string to null to avoid unique constraint conflicts
+    const cleanEmail = email?.trim() === '' ? null : email?.trim() || null;
+
+    await User.update(
+      {
+        ...(name       && { name: name.trim() }),
+        email: cleanEmail,          // always update email (null is fine)
+      },
+      { where: { id: req.user.id } }
+    );
+
     const updated = await User.findByPk(req.user.id, {
       attributes: { exclude: ['password_hash'] },
     });
+
     return res.json({ success: true, user: updated });
   } catch (err) {
+    // Catch duplicate email specifically
+    if (err.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({ success: false, message: 'Email already in use by another account' });
+    }
     return res.status(500).json({ success: false, message: err.message });
   }
 };

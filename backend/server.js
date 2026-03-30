@@ -14,7 +14,7 @@ import rationCardRoutes from './src/routes/rationCard.routes.js';
 import shopRoutes from './src/routes/shop.routes.js';
 // Start background welfare monitoring cron jobs
 import './src/utils/welfare.cron.js';
-
+import './src/utils/notification.cron.js';
 const app = express();
 
 app.use(helmet());
@@ -49,7 +49,7 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await testConnection();
-     await sequelize.sync({ alter: true });
+     await sequelize.sync({ force: false});
     app.listen(config.port, () => {
       console.log(`🚀 SmartRation API running on port ${config.port}`);
     });
