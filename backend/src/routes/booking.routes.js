@@ -1,24 +1,22 @@
 import express from 'express';
 import {
-  getSlots,
-  createBooking,
-  getMyBookings,
-  getBookingById,
-  cancelBooking,
-  verifyBookingToken,
+  getSlots, getEntitlements, createBooking,
+  getMyBookings, getBookingById, cancelBooking,
+  verifyBookingToken, getQueueToday,
 } from '../controllers/booking.controller.js';
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// All booking routes require login
 router.use(protect);
 
-router.get('/slots',              getSlots);
-router.post('/book',              createBooking);
-router.get('/my-bookings',        getMyBookings);
-router.get('/verify/:token_number', verifyBookingToken); // shop owner
-router.get('/:id',                getBookingById);
-router.put('/:id/cancel',         cancelBooking);
+router.get('/slots',                getSlots);
+router.get('/entitlements',         getEntitlements);
+router.get('/queue-today',          getQueueToday);        // all users see this
+router.post('/book',                createBooking);
+router.get('/my-bookings',          getMyBookings);
+router.get('/verify/:token_number', verifyBookingToken);
+router.get('/:id',                  getBookingById);
+router.put('/:id/cancel',           cancelBooking);
 
 export default router;

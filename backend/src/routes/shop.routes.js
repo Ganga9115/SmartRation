@@ -6,7 +6,11 @@ const router = express.Router();
 
 router.get('/', protect, async (req, res) => {
   try {
-    const shops = await Shop.findAll({ where: { is_active: true } });
+    const shops = await Shop.findAll({
+      where:      { is_active: true },
+      attributes: ['id', 'name', 'address', 'phone', 'open_time', 'close_time'],
+      order:      [['name', 'ASC']],
+    });
     return res.json({ success: true, shops });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });

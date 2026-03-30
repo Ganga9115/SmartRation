@@ -6,7 +6,10 @@ const WelfareAlert = sequelize.define('WelfareAlert', {
   user_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
   ration_card_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
   alert_type: {
-    type: DataTypes.ENUM('missed_collection', 'inactivity_warning', 'fraud_flag', 'stock_low'),
+    type: DataTypes.ENUM('missed_collection', 'inactivity_warning', 'fraud_flag', 'stock_low','booking_confirmed',       
+    'booking_reminder_1day',  
+    'booking_reminder_1hr',    
+    'collection_missed'),
     allowNull: false,
   },
   message: { type: DataTypes.TEXT, allowNull: false },
