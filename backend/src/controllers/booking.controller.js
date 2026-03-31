@@ -3,6 +3,9 @@ import { getRecommendedSlots } from '../ai/slotRecommender.js';
 import { processBooking, cancelBookingById, calculateEntitlements } from '../services/booking.service.js';
 import { Op } from 'sequelize';
 
+// ── Slots per time window — max families per 30-min slot
+const MAX_PER_SLOT = 5;
+
 // ── GET /api/booking/slots?shop_id=1 ──────────────────────
 export const getSlots = async (req, res) => {
   try {
@@ -18,7 +21,6 @@ export const getSlots = async (req, res) => {
 };
 
 // ── GET /api/booking/entitlements?shop_id=1 ───────────────
-// Returns what items a user is entitled to based on family size
 export const getEntitlements = async (req, res) => {
   try {
     const { shop_id } = req.query;
@@ -140,7 +142,8 @@ export const verifyBookingToken = async (req, res) => {
 };
 
 // ── GET /api/booking/queue-today?shop_id=1&date=2025-01-01 ─
-// Public endpoint — all users can see today's queue
+// Returns bookings sorted by SLOT TIME first, then token number
+// This is the correct queue order — people with earlier slots are truly ahead
 export const getQueueToday = async (req, res) => {
   try {
     const { shop_id, date } = req.query;
@@ -154,17 +157,116 @@ export const getQueueToday = async (req, res) => {
         status:       { [Op.notIn]: ['cancelled'] },
       },
       attributes: ['id', 'token_number', 'slot_time', 'status'],
-      order:       [['token_number', 'ASC']],
+      // ✅ Sort by slot_time first, then token_number within same slot
+      order: [
+        ['slot_time',    'ASC'],
+        ['token_number', 'ASC'],
+      ],
     });
+
+    // Build slot-aware position map
+    // Position = how many non-cancelled, non-completed people are before you in slot+token order
+    const activeQueue = bookings.filter(b =>
+      b.status !== 'completed' && b.status !== 'no_show'
+    );
 
     const summary = {
       total:     bookings.length,
       confirmed: bookings.filter(b => b.status === 'confirmed').length,
       completed: bookings.filter(b => b.status === 'completed').length,
       no_show:   bookings.filter(b => b.status === 'no_show').length,
+      // Group by slot for the frontend
+      by_slot:   {},
     };
 
-    return res.json({ success: true, date, shop_id, summary, bookings });
+    // Build slot summary
+    for (const b of bookings) {
+      const slot = b.slot_time;
+      if (!summary.by_slot[slot]) {
+        summary.by_slot[slot] = { total: 0, completed: 0, waiting: 0 };
+      }
+      summary.by_slot[slot].total++;
+      if (b.status === 'completed') summary.by_slot[slot].completed++;
+      else summary.by_slot[slot].waiting++;
+    }
+
+    return res.json({
+      success:  true,
+      date,
+      shop_id,
+      summary,
+      bookings,       // sorted by slot_time ASC, token ASC
+      active_queue:   activeQueue,  // only waiting people, same order
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ── GET /api/booking/my-position?shop_id=1&date=2025-01-01&token=5
+// Returns this user's exact position in the slot-aware queue
+export const getMyQueuePosition = async (req, res) => {
+  try {
+    const { shop_id, date, token } = req.query;
+    if (!shop_id || !date || !token)
+      return res.status(400).json({ success: false, message: 'shop_id, date and token required' });
+
+    // Get this booking to know its slot_time
+    const myBooking = await Booking.findOne({
+      where: { shop_id, booking_date: date, token_number: token },
+      attributes: ['id', 'token_number', 'slot_time', 'status'],
+    });
+    if (!myBooking)
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+
+    // Count people truly ahead:
+    // 1. People in EARLIER slots who are still waiting
+    // 2. People in the SAME slot with a lower token number who are still waiting
+    const peopleAhead = await Booking.count({
+      where: {
+        shop_id,
+        booking_date: date,
+        status:       { [Op.notIn]: ['cancelled', 'completed', 'no_show'] },
+        [Op.or]: [
+          // Earlier slot time
+          { slot_time: { [Op.lt]: myBooking.slot_time } },
+          // Same slot, lower token
+          {
+            slot_time:    myBooking.slot_time,
+            token_number: { [Op.lt]: parseInt(token) },
+          },
+        ],
+      },
+    });
+
+    // Count people in same slot (for slot context)
+    const sameSlotTotal = await Booking.count({
+      where: {
+        shop_id,
+        booking_date: date,
+        slot_time:    myBooking.slot_time,
+        status:       { [Op.notIn]: ['cancelled'] },
+      },
+    });
+
+    const sameSlotCompleted = await Booking.count({
+      where: {
+        shop_id,
+        booking_date: date,
+        slot_time:    myBooking.slot_time,
+        status:       'completed',
+      },
+    });
+
+    return res.json({
+      success:            true,
+      token_number:       parseInt(token),
+      slot_time:          myBooking.slot_time,
+      people_ahead:       peopleAhead,
+      same_slot_total:    sameSlotTotal,
+      same_slot_completed: sameSlotCompleted,
+      same_slot_waiting:  sameSlotTotal - sameSlotCompleted,
+    });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }

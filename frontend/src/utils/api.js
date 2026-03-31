@@ -7,14 +7,12 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Auto-attach JWT
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Auto-handle 401
 api.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -27,7 +25,6 @@ api.interceptors.response.use(
   }
 );
 
-// ── Auth ──────────────────────────────────────────────────
 export const authAPI = {
   sendOTP:       (phone)      => api.post('/auth/send-otp',   { phone }),
   verifyOTP:     (phone, otp) => api.post('/auth/verify-otp', { phone, otp }),
@@ -35,20 +32,17 @@ export const authAPI = {
   updateProfile: (data)       => api.put('/auth/profile', data),
 };
 
-// ── Ration Card ───────────────────────────────────────────
 export const rationCardAPI = {
   register:  (data) => api.post('/ration-card', data),
   getMyCard: ()     => api.get('/ration-card/my'),
   update:    (data) => api.put('/ration-card/my', data),
 };
 
-// ── Shops ─────────────────────────────────────────────────
 export const shopAPI = {
-  getAll:  ()    => api.get('/shops'),
-  getById: (id)  => api.get(`/shops/${id}`),
+  getAll:  ()   => api.get('/shops'),
+  getById: (id) => api.get(`/shops/${id}`),
 };
 
-// ── Booking ───────────────────────────────────────────────
 export const bookingAPI = {
   getSlots:        (shopId)              => api.get(`/booking/slots?shop_id=${shopId}`),
   getEntitlements: (shopId)              => api.get(`/booking/entitlements?shop_id=${shopId}`),
@@ -58,20 +52,18 @@ export const bookingAPI = {
   cancel:          (id)                  => api.put(`/booking/${id}/cancel`),
   verify:          (token, shopId, date) => api.get(`/booking/verify/${token}?shop_id=${shopId}&date=${date}`),
   getQueueToday:   (shopId, date)        => api.get(`/booking/queue-today?shop_id=${shopId}&date=${date}`),
+  getMyPosition:   (shopId, date, token) => api.get(`/booking/my-position?shop_id=${shopId}&date=${date}&token=${token}`),
 };
 
-// ── Stock ─────────────────────────────────────────────────
 export const stockAPI = {
   getByShop: (shopId) => api.get(`/stock?shop_id=${shopId}`),
 };
 
-// ── Queue ─────────────────────────────────────────────────
 export const queueAPI = {
   getStatus:   (shopId, date)        => api.get(`/queue/status?shop_id=${shopId}&date=${date}`),
   getWaitTime: (shopId, date, token) => api.get(`/queue/wait?shop_id=${shopId}&date=${date}&token=${token}`),
 };
 
-// ── Welfare ───────────────────────────────────────────────
 export const welfareAPI = {
   getMyAlerts: () => api.get('/welfare/alerts/my'),
 };
