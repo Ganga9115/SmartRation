@@ -1,5 +1,5 @@
 import { Booking, RationCard, Stock, WelfareAlert } from '../models/index.js';
-import { Op, literal } from 'sequelize';   // ✅ literal imported properly
+import { Op } from 'sequelize';
 
 export const checkMissedCollections = async () => {
   try {
@@ -95,7 +95,6 @@ export const checkInactiveBookings = async () => {
 
 export const checkLowStock = async () => {
   try {
-    // ✅ Use literal() from sequelize import — no require()
     const allStock = await Stock.findAll({
       where: { total_qty: { [Op.gt]: 0 } },
     });
@@ -121,9 +120,13 @@ export const checkLowStock = async () => {
       });
 
       if (!existing) {
+        // ✅ FIX: Find an admin user to assign this alert to, or use first card in the shop
+        const adminCard = await RationCard.findOne({ where: { is_active: true } });
+        if (!adminCard) continue;  // Skip if no card exists
+
         await WelfareAlert.create({
-          user_id:        1,
-          ration_card_id: 1,
+          user_id:        adminCard.user_id,
+          ration_card_id: adminCard.id,
           alert_type:     'stock_low',
           message:        `Shop #${shopId} is critically low on: ${items.join(', ')}. Restock needed immediately.`,
         });

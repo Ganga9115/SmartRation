@@ -1,5 +1,5 @@
 import { WelfareAlert, User, RationCard } from '../models/index.js';
-import { Op, fn, col } from 'sequelize';  // ✅ fn, col imported properly
+import { Op, fn, col } from 'sequelize';
 import {
   checkMissedCollections,
   checkInactiveBookings,
@@ -8,12 +8,13 @@ import {
 } from '../ai/welfareMonitor.js';
 import { runBatchFraudScan } from '../ai/fraudDetector.js';
 
+// ── GET /api/welfare/alerts  (admin) ─────────────────────
 export const getAlerts = async (req, res) => {
   try {
     const { type, resolved, user_id, page = 1, limit = 20 } = req.query;
     const where = {};
-    if (type)              where.alert_type  = type;
-    if (user_id)           where.user_id     = user_id;
+    if (type)               where.alert_type  = type;
+    if (user_id)            where.user_id     = user_id;
     if (resolved !== undefined) where.is_resolved = resolved === 'true';
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -40,6 +41,7 @@ export const getAlerts = async (req, res) => {
   }
 };
 
+// ── GET /api/welfare/alerts/my  (user) ───────────────────
 export const getMyAlerts = async (req, res) => {
   try {
     const alerts = await WelfareAlert.findAll({
@@ -52,13 +54,18 @@ export const getMyAlerts = async (req, res) => {
   }
 };
 
+// ── PUT /api/welfare/alerts/:id/resolve ──────────────────
 export const resolveAlert = async (req, res) => {
   try {
-    const alert = await WelfareAlert.findByPk(req.params.id);
+    const where = req.user.role === 'admin'
+      ? { id: req.params.id }
+      : { id: req.params.id, user_id: req.user.id };
+
+    const alert = await WelfareAlert.findOne({ where });
     if (!alert)
       return res.status(404).json({ success: false, message: 'Alert not found' });
     if (alert.is_resolved)
-      return res.status(400).json({ success: false, message: 'Alert already resolved' });
+      return res.status(400).json({ success: false, message: 'Already resolved' });
 
     await alert.update({ is_resolved: true, resolved_at: new Date() });
     return res.json({ success: true, message: 'Alert resolved', alert });
@@ -67,6 +74,7 @@ export const resolveAlert = async (req, res) => {
   }
 };
 
+// ── PUT /api/welfare/alerts/resolve-bulk  (admin) ────────
 export const resolveBulk = async (req, res) => {
   try {
     const { ids } = req.body;
@@ -83,6 +91,7 @@ export const resolveBulk = async (req, res) => {
   }
 };
 
+// ── POST /api/welfare/run-checks  (admin) ────────────────
 export const runWelfareChecks = async (req, res) => {
   try {
     const [missed, inactive, stock, fraudList] = await Promise.all([
@@ -111,6 +120,7 @@ export const runWelfareChecks = async (req, res) => {
   }
 };
 
+// ── GET /api/welfare/summary  (admin) ────────────────────
 export const getWelfareSummary = async (req, res) => {
   try {
     const [total, unresolved, byType] = await Promise.all([
@@ -119,7 +129,7 @@ export const getWelfareSummary = async (req, res) => {
       WelfareAlert.findAll({
         attributes: [
           'alert_type',
-          [fn('COUNT', col('id')), 'count'],  // ✅ no require()
+          [fn('COUNT', col('id')), 'count'],
         ],
         group: ['alert_type'],
         raw:   true,

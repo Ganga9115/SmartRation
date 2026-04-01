@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import { useAuth } from './utils/AuthContext';
 import { SplashScreen }             from './components/screens/SplashScreen';
 import { LoginScreen }              from './components/screens/LoginScreen';
@@ -17,7 +17,7 @@ import LiveQueueScreen from './components/screens/LivequeueScreen';
 
 export default function App() {
   const { token, loading } = useAuth();
-  const [currentScreen, setCurrentScreen] = useState('login');
+  const [currentScreen, setCurrentScreen] = useState('home');
   const [showSplash, setShowSplash]       = useState(true);
   const [screenParams, setScreenParams]   = useState({});
 
@@ -26,35 +26,33 @@ export default function App() {
     setScreenParams(params);
   };
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F8F4FB' }}>
-      <div className="text-center">
-        <div className="w-12 h-12 rounded-full border-4 border-purple-200 border-t-purple-600 animate-spin mx-auto mb-4" />
-        <p style={{ color: '#5E4075' }}>Loading...</p>
-      </div>
-    </div>
-  );
+  // ✅ Redirect to login once auth resolves and there's no token
+  useEffect(() => {
+    if (!loading && !token) {
+      handleNavigate('login');
+    }
+  }, [loading, token]);
 
-  if (showSplash) return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  // ✅ Keep splash up until BOTH splash timer AND auth loading are done
+  if (showSplash || loading) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
 
-  // If no token, always show login
-  if (!token && currentScreen !== 'login') handleNavigate('login');
-
-  const showBottomNav = !['login', 'splash'].includes(currentScreen);
+  const showBottomNav = !['login', 'splash', 'ration-card'].includes(currentScreen);
 
   return (
     <div className="relative">
-      {currentScreen === 'login'        && <LoginScreen              onNavigate={handleNavigate} />}
-      {currentScreen === 'home'         && <HomeScreen               onNavigate={handleNavigate} />}
-      {currentScreen === 'stock'        && <StockScreen              onNavigate={handleNavigate} params={screenParams} />}
-      {currentScreen === 'nearby-shops' && <NearbyShopsScreen        onNavigate={handleNavigate} />}
-      {currentScreen === 'slot-booking' && <SlotBookingScreen        onNavigate={handleNavigate} params={screenParams} />}
-      {currentScreen === 'confirmation' && <BookingConfirmationScreen onNavigate={handleNavigate} params={screenParams} />}
-      {currentScreen === 'notifications'&& <NotificationsScreen      onNavigate={handleNavigate} />}
-      {currentScreen === 'profile'      && <ProfileScreen            onNavigate={handleNavigate} />}
-      {currentScreen === 'ration-card'  && <RationCardScreen         onNavigate={handleNavigate} />}
-      {currentScreen === 'my-bookings' && <MyBookingsScreen onNavigate={handleNavigate} />}
-         {currentScreen === 'live-queue'   && <LiveQueueScreen         onNavigate={handleNavigate} params={screenParams} />}
+      {currentScreen === 'login'         && <LoginScreen              onNavigate={handleNavigate} />}
+      {currentScreen === 'home'          && <HomeScreen               onNavigate={handleNavigate} />}
+      {currentScreen === 'stock'         && <StockScreen              onNavigate={handleNavigate} params={screenParams} />}
+      {currentScreen === 'nearby-shops'  && <NearbyShopsScreen        onNavigate={handleNavigate} />}
+      {currentScreen === 'slot-booking'  && <SlotBookingScreen        onNavigate={handleNavigate} params={screenParams} />}
+      {currentScreen === 'confirmation'  && <BookingConfirmationScreen onNavigate={handleNavigate} params={screenParams} />}
+      {currentScreen === 'notifications' && <NotificationsScreen      onNavigate={handleNavigate} />}
+      {currentScreen === 'profile'       && <ProfileScreen            onNavigate={handleNavigate} />}
+      {currentScreen === 'ration-card'   && <RationCardScreen         onNavigate={handleNavigate} />}
+      {currentScreen === 'my-bookings'   && <MyBookingsScreen         onNavigate={handleNavigate} />}
+      {currentScreen === 'live-queue'    && <LiveQueueScreen          onNavigate={handleNavigate} params={screenParams} />}
       {showBottomNav && <BottomNav active={currentScreen} onNavigate={handleNavigate} />}
     </div>
   );
