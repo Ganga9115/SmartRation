@@ -4,15 +4,15 @@ import { authAPI, rationCardAPI } from './api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser]           = useState(null);
+  const [user, setUser]             = useState(null);
   const [rationCard, setRationCard] = useState(null);
-  const [token, setToken]         = useState(localStorage.getItem('token'));
-  const [loading, setLoading]     = useState(true);
+  const [token, setToken]           = useState(localStorage.getItem('smartration_token'));
+  const [loading, setLoading]       = useState(true);
 
-  // On mount — if token exists, fetch fresh user + card data
   useEffect(() => {
     const init = async () => {
-      if (token) {
+      const savedToken = localStorage.getItem('smartration_token');
+      if (savedToken) {
         try {
           const [userRes, cardRes] = await Promise.all([
             authAPI.getMe(),
@@ -27,18 +27,23 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
     init();
-  }, [token]);
+  }, []);
 
   const login = (userData, jwtToken) => {
-    localStorage.setItem('token', jwtToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+    if (!jwtToken) {
+      console.error('login() called without a token');
+      return;
+    }
+    localStorage.setItem('smartration_token', jwtToken);
+    localStorage.setItem('smartration_user', JSON.stringify(userData));
     setToken(jwtToken);
     setUser(userData);
   };
 
+  // ✅ logout was completely missing — this caused the crash too
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('smartration_token');
+    localStorage.removeItem('smartration_user');
     setToken(null);
     setUser(null);
     setRationCard(null);
