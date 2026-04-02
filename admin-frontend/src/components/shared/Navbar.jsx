@@ -1,69 +1,62 @@
 import { Bell, LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 export function Navbar() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("smartration_admin_user");
+      if (saved) setUser(JSON.parse(saved));
+    } catch (_) {}
+  }, []);
 
   const handleLogout = () => {
-    // later you can clear token here
+    localStorage.removeItem("smartration_admin_token");
+    localStorage.removeItem("smartration_admin_user");
     navigate("/login");
   };
 
-  const handleProfileClick = () => {
-    navigate("/profile");
-  };
+  const today = new Date().toLocaleDateString("en-IN", {
+    weekday: "short", day: "numeric", month: "short",
+  });
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-100 px-6 py-3.5">
       <div className="flex items-center justify-between">
 
         {/* Left */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            Welcome back, Admin
-          </h2>
-          <p className="text-sm text-gray-500">
-            Manage your ration shop operations
+          <p className="text-sm font-semibold text-gray-900">
+            Welcome back, {user?.name?.split(" ")[0] || "Admin"}
           </p>
+          <p className="text-xs text-gray-400 mt-0.5">{today}</p>
         </div>
 
         {/* Right */}
-        <div className="flex items-center gap-4">
-
-          {/* Notification */}
-          <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("/profile")}
+            className="flex items-center gap-2.5 pl-3 pr-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+          >
+            <div className="w-7 h-7 bg-[#E1D2FF] rounded-lg flex items-center justify-center">
+              <User className="w-3.5 h-3.5 text-[#5E4075]" />
+            </div>
+            <div className="text-left hidden sm:block">
+              <p className="text-xs font-semibold text-gray-900 leading-tight">{user?.name || "Admin"}</p>
+              <p className="text-xs text-gray-400 capitalize leading-tight">{user?.role || "admin"}</p>
+            </div>
           </button>
 
-          {/* User Info */}
-          <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                Rajesh Kumar
-              </p>
-              <p className="text-xs text-gray-500">
-                Shop Admin
-              </p>
-            </div>
-
-            {/* Profile Button */}
-            <button
-              onClick={handleProfileClick}
-              className="w-10 h-10 bg-[#E1D2FF] rounded-full flex items-center justify-center hover:bg-[#d1c0f5]"
-            >
-              <User className="w-5 h-5 text-[#5E4075]" />
-            </button>
-          </div>
-
-          {/* Logout */}
           <button
             onClick={handleLogout}
-            className="p-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg"
+            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            title="Logout"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4.5 h-4.5 w-[18px] h-[18px]" />
           </button>
-
         </div>
       </div>
     </header>
