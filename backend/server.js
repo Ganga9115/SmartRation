@@ -12,6 +12,7 @@ import queueRoutes   from './src/routes/queue.routes.js';
 import welfareRoutes from './src/routes/welfare.routes.js';
 import rationCardRoutes from './src/routes/rationCard.routes.js';
 import shopRoutes from './src/routes/shop.routes.js';
+import specialEventRoutes from './src/routes/specialevent.routes.js';
 // Start background welfare monitoring cron jobs
 import './src/utils/welfare.cron.js';
 import './src/utils/notification.cron.js';
@@ -31,6 +32,7 @@ app.use('/api/queue',   queueRoutes);
 app.use('/api/welfare', welfareRoutes);
 app.use('/api/ration-card', rationCardRoutes);
 app.use('/api/shops', shopRoutes);
+app.use('/api/events', specialEventRoutes);
 // ── Health check ─────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

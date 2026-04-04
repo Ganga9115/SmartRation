@@ -1,12 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Package, Bell, Calendar, UserCircle, ShieldCheck } from "lucide-react";
-
+import { Gift } from "lucide-react";
 const navItems = [
   { path: "/",         icon: LayoutDashboard, label: "Dashboard" },
   { path: "/stock",    icon: Package,         label: "Stock" },
   { path: "/welfare",  icon: Bell,            label: "Welfare Alerts" },
   { path: "/bookings", icon: Calendar,        label: "Bookings" },
   { path: "/profile",  icon: UserCircle,      label: "Profile" },
+  { path: "/events", icon: Gift, label: "Special Events" },
 ];
 
 export function Sidebar() {

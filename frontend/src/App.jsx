@@ -13,6 +13,7 @@ import { RationCardScreen }         from './components/screens/RationCardScreen'
 import { BottomNav }                from './components/shared/ButtomNav';
 import { MyBookingsScreen } from './components/screens/MyBookingsScreen';
 import LiveQueueScreen from './components/screens/LivequeueScreen';
+import SpecialEventsScreen from './components/screens/SpecialEventsScreen';
 
 
 export default function App() {
@@ -54,6 +55,7 @@ export default function App() {
       {currentScreen === 'my-bookings'   && <MyBookingsScreen         onNavigate={handleNavigate} />}
       {currentScreen === 'live-queue'    && <LiveQueueScreen          onNavigate={handleNavigate} params={screenParams} />}
       {showBottomNav && <BottomNav active={currentScreen} onNavigate={handleNavigate} />}
+      {currentScreen === 'special-events' && <SpecialEventsScreen onNavigate={handleNavigate} />}
     </div>
   );
 }

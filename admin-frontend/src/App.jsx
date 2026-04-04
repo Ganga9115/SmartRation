@@ -1,15 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-
 import { Dashboard }       from "./components/pages/Dashboard";
-import { WelfareAlerts }   from "./components/pages/WelfareAlerts";
 import { StockManagement } from "./components/pages/StockManagement";
 import { Bookings }        from "./components/pages/Bookings";
 import { Profile }         from "./components/pages/Profile";
 import { Login }           from "./components/pages/Login";
-
 import { Sidebar } from "./components/shared/Sidebar";
 import { Navbar }  from "./components/shared/Navbar";
-
+import { WelfareAlerts } from "./components/pages/Welfarealerts";
+import { SpecialEvents } from "./components/pages/SpecialEvents";
 // Simple auth guard — checks localStorage for admin token
 function RequireAuth({ children }) {
   const token = localStorage.getItem("smartration_admin_token");
@@ -41,6 +39,7 @@ export default function App() {
                       <Route path="/stock"   element={<StockManagement />} />
                       <Route path="/bookings" element={<Bookings />} />
                       <Route path="/profile" element={<Profile />} />
+                      <Route path="/events" element={<SpecialEvents />} />
                       {/* Fallback */}
                       <Route path="*"        element={<Navigate to="/" replace />} />
                     </Routes>
