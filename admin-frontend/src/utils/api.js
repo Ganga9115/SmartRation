@@ -63,4 +63,13 @@ export const adminWelfareAPI = {
   resolveBulk: (ids)    => api.put('/welfare/alerts/resolve-bulk', { ids }),
 };
 
+export const adminEventsAPI = {
+  getAll:    ()           => api.get('/events'),
+  create:    (data)       => api.post('/events', data),
+  update:    (id, data)   => api.put(`/events/${id}`, data),
+  delete:    (id)         => api.delete(`/events/${id}`),
+  getTokens: (id, params) => api.get(`/events/${id}/tokens`, { params }),
+  markUsed:  (eId, tId)   => api.post(`/events/${eId}/tokens/${tId}/mark-used`),
+};
+
 export default api;

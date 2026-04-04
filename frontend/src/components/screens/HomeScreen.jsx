@@ -4,7 +4,7 @@ import { Card } from '../shared/Card';
 import { COLORS } from '../../utils/colors';
 import { useAuth } from '../../utils/AuthContext';
 import { bookingAPI, welfareAPI } from '../../utils/api';
-
+ import { Gift } from 'lucide-react'
 const getGreeting = () => {
   const h = new Date().getHours();
   if (h < 12) return 'Good Morning';
@@ -35,6 +35,7 @@ export const HomeScreen = ({ onNavigate }) => {
     { icon: Calendar, title: 'Book Slot',     subtitle: 'Book your time slot',  screen: 'slot-booking' },
     { icon: List,     title: 'My Bookings',  subtitle: 'View booking history', screen: 'my-bookings' },
     { icon: MapPin,   title: 'Nearby Shops', subtitle: 'Find shops near you',  screen: 'nearby-shops' },
+    { icon: Gift,     title: 'Special Events', subtitle: 'Pongal & festival tokens', screen: 'special-events' }
   ];
 
   const now       = new Date();
